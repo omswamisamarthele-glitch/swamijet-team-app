@@ -1,0 +1,5 @@
+{
+  "version": "5.9.40",
+  "message": "v5.9.40 — Fixed a fatal load-time crash: 'Uncaught ReferenceError: editAdv is not defined'. In the main 'use strict' script block, editAdv was assigned as a bare global without a var declaration, which throws under strict mode and aborted ALL code after it — including every window.* function export (rPay, openAdv, saveAdv, editStock, rDash, etc.), the advances/stock/payments wiring, and session auto-restore. Declaring editAdv lets the whole block finish loading. Includes the v5.9.37-39 check-in fixes (instant save, background selfie upload, lighter Supabase sync). No data or attendance logic changed.",
+  "force": true
+}
