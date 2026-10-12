@@ -1,5 +1,5 @@
 {
-  "version": "5.9.41",
-  "message": "v5.9.41 — Security fix: removed the built-in admin/admin123 login that worked even after the admin password was changed, and stopped accepting a stored password hash as a password. The default admin is now created only on a brand-new empty database. Also: correct version shown in the header, legacy Google Sheets sync retired, Supabase library pinned. No business data changed.",
+  "version": "5.9.42",
+  "message": "v5.9.42 — SwamiJet now runs on its own server with a PostgreSQL database instead of Supabase. Please log in again once. Each record now syncs on its own, so edits on two phones no longer overwrite each other, and passwords are checked by the server and never stored on phones. Your data stays on this device until it is synced.",
   "force": true
 }

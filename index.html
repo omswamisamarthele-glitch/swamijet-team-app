@@ -426,7 +426,6 @@ body.role-noadmin .sjp-printbar{display:none!important;}
 @media(max-width:760px){.sjp-sync-pill{display:none}.sjp-update-box{max-width:94vw}}
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4"></script>
 <style id="sjv599">
 /* ================================================================
    SwamiJet v5.9.36 — Bottom-bar navigation + dual-theme accents
@@ -600,7 +599,7 @@ body.light #sjBottomBar{box-shadow:0 -6px 22px rgba(15,23,42,.08);}
   <header>
     <div class="hL">
       <button class="hburger" id="menuBtn" aria-label="Menu">&#9776;</button>
-      <span class="hBrand">&#9889; SwamiJet<span class="sjp-version-badge" id="appVersionBadge" style="display:none">v5.9.41</span></span>
+      <span class="hBrand">&#9889; SwamiJet<span class="sjp-version-badge" id="appVersionBadge" style="display:none">v5.9.42</span></span>
     </div>
     <div class="hR">
       <span class="sjp-sync-pill online" id="sjpSyncStatus" title="Cloud sync status — click to force sync" style="cursor:pointer">Online Synced</span>
@@ -1586,24 +1585,11 @@ var SHEET_API_URL='';
 // v5.2.0: BUNDLED Supabase credentials so every device (admin + team members)
 // auto-connects to cloud database WITHOUT needing DB Setup. localStorage values
 // still take precedence (so admin can override per-device if ever needed).
-var SUPABASE_URL = localStorage.getItem('sj_supabase_url') || 'https://cvcrffxonrmtyaklhgbl.supabase.co';
-var SUPABASE_ANON_KEY = localStorage.getItem('sj_supabase_anon') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2Y3JmZnhvbnJtdHlha2xoZ2JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDA4MzYsImV4cCI6MjA5NjY3NjgzNn0.IDmoZfHSXESD-R3MF_adupyI1d1uDHNQsz_ncx7s6Ak';
+// v5.9.42: Supabase removed. Sync goes to the SwamiJet server (see the sjServerSync script at the end).
+var SUPABASE_URL = '';
+var SUPABASE_ANON_KEY = '';
 var SUPABASE_TABLE = 'app_data';
 
-// v5.6.2 SELF-HEAL: guarantee valid Supabase creds in localStorage on EVERY
-// origin (production, test domain, brand-new device). The app ships with working
-// built-in credentials; if this origin has none saved (or saved an invalid one),
-// copy the built-ins in now. After this, no code path — old or new, SDK or REST —
-// can wrongly report "Local Only - DB Key Missing" while valid built-ins exist.
-(function(){
-  try{
-    var okU=function(u){return /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(String(u||'').trim());};
-    var okK=function(k){k=String(k||'').trim(); return k.length>100 && /^eyJ/.test(k) && (k.match(/\./g)||[]).length>=2;};
-    var lsU=localStorage.getItem('sj_supabase_url'), lsK=localStorage.getItem('sj_supabase_anon');
-    if(!okU(lsU) && okU(SUPABASE_URL))      localStorage.setItem('sj_supabase_url', String(SUPABASE_URL).trim());
-    if(!okK(lsK) && okK(SUPABASE_ANON_KEY)) localStorage.setItem('sj_supabase_anon', String(SUPABASE_ANON_KEY).trim());
-  }catch(e){}
-})();
 
 
 var CLOUD_KEYS=['team','attendance','siteReports','payments','tasks','notices','sops','sopComp','jobcards','advances','salHist','salaryPayments','salaryLocks','salaryOverrides','overtime','kraComp','notifications','stock','stockOrdered','adminNotes','activityLog','attendanceAudit','officeGps','paymentSettings','customers','suppliers','tasksV2','sopMasters','sopCompletions','userPermissions','scoreCache','workLogs','contacts'];
@@ -1611,6 +1597,7 @@ var CLOUD_KEYS=['team','attendance','siteReports','payments','tasks','notices','
 // synced as whole values, not row-merged. Treating them as arrays caused
 // "(local || []).forEach is not a function" which killed ALL sync.
 var OBJ_KEYS=['officeGps','paymentSettings'];
+window.CLOUD_KEYS=CLOUD_KEYS; // v5.9.42: read by the sjServerSync layer
 var cloudOn=false, cloudQueue={}, cloudTimer=null, cloudSyncing=false;
 
 function cloudEnabled(){ return /^https:\/\//.test(String(SHEET_API_URL||'')); }
@@ -1804,7 +1791,7 @@ window.addEventListener('pagehide',function(){
   keys.forEach(function(k){ bulk[k]=DB.getRaw(k)||[]; });
   // Pick the right endpoint based on which sync is active
   try{
-    if(typeof supabaseEnabled === 'function' && supabaseEnabled()){
+    if(false){ // v5.9.42: Supabase removed; sjServerSync sends pending edits on pagehide
       // Supabase: send a fire-and-forget upsert via fetch+keepalive (sendBeacon can't set headers)
       var cfg = (typeof getSbCfg==='function') ? getSbCfg() : null;
       if(cfg && cfg.url && cfg.key){
@@ -9225,7 +9212,7 @@ cloudInit(function(){
 // =============================================================
 (function(){
   'use strict';
-  var FIX_VERSION='5.9.41';
+  var FIX_VERSION='5.9.42';
   window.SWAMI_VERSION=FIX_VERSION;
 
   // v5.4.1 ROOT FIX: Declare every name this IIFE assigns to. Block 2 (the
@@ -9877,7 +9864,7 @@ cloudInit(function(){
 <script>
 // Cloudflare Pages PWA update + safe version system
 (function(){
-  var APP_VERSION='5.9.41';
+  var APP_VERSION='5.9.42';
   var VERSION_URL='./version.json?ts='+Date.now();
   window.SWAMI_VERSION=APP_VERSION;
   window.SWAMIJET_APP_VERSION=APP_VERSION;
@@ -9960,7 +9947,7 @@ cloudInit(function(){
 <script>
 // v4.8.6 cross-device login hardening: always pull cloud first, support plaintext and SHA-256 passwords, and show sync-specific error.
 (function(){
-  var FIX_VERSION='5.9.41';
+  var FIX_VERSION='5.9.42';
   function byId(id){return document.getElementById(id);} 
   function val(id){var e=byId(id);return e?String(e.value||'').trim():'';}
   function norm(v){return String(v||'').trim().toLowerCase();}
@@ -10045,7 +10032,7 @@ cloudInit(function(){
 <script>
 // v4.8.9 task assignment + daily tasks polish + login timeout hardening
 (function(){
-  var FIX_VERSION='5.9.41';
+  var FIX_VERSION='5.9.42';
   function byId(id){return document.getElementById(id);} 
   function txt(v){return String(v==null?'':v).trim();}
   function norm(v){return txt(v).toLowerCase();}
@@ -10117,7 +10104,7 @@ cloudInit(function(){
 // 4) Make Supabase config helpers global so all later/older patches read the same status.
 // 5) Keep a local backup of team data and restore it if a bad sync returns empty team.
 (function(){
-  var FIX_VERSION='5.9.41';
+  var FIX_VERSION='5.9.42';
   var TABLE=(typeof SUPABASE_TABLE!=='undefined' && SUPABASE_TABLE) ? SUPABASE_TABLE : 'app_data';
   var KEYS=(typeof CLOUD_KEYS!=='undefined' && Array.isArray(CLOUD_KEYS)) ? CLOUD_KEYS : ['team','attendance','siteReports','payments','tasks','notices','sops','sopComp','jobcards','advances','salHist','kraComp','notifications','stock','stockOrdered','adminNotes','activityLog','attendanceAudit','officeGps','paymentSettings','customers','suppliers'];
   function byId(id){return document.getElementById(id);} 
@@ -10420,7 +10407,6 @@ cloudInit(function(){
   function install(){
     try{var v=byId('appVersionBadge'); if(v)v.textContent='v'+FIX_VERSION;}catch(e){}
     ensureAdmin(); backupTeam(); restoreTeamIfEmpty(); wireLogin(); addRepairButtons();
-    if(!window.supabaseEnabled()) status('Local Only - DB Key Missing','br');
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install); else install();
   setTimeout(install,500); setTimeout(install,1800);
@@ -14309,6 +14295,293 @@ cloudInit(function(){
       '@media(max-width:700px){.jc-tech-checks{grid-template-columns:1fr;}}';
     document.head.appendChild(st);
   }catch(e){}
+})();
+</script>
+<script id="sjServerSync">
+/* v5.9.42 SERVER SYNC — replaces Supabase. Talks to the SwamiJet server (server/ in the repo).
+   Loaded last, so these definitions win over the older sync layers above.
+   - Login is checked by the server; passwords never sync to phones.
+   - Each record is synced on its own, with the server's version number, so edits to different
+     records never overwrite each other. A change based on an outdated copy is refused by the server
+     unless it is newer by _up; the server copy then replaces the local one.
+   - Local data stays in localStorage (sj3_<module>) exactly as before, so all screens work unchanged. */
+(function(){
+  'use strict';
+  var TRIMMED = { activityLog: 1, notifications: 1, scoreCache: 1 };
+  var BATCH = 300, BATCH_BYTES = 4 * 1024 * 1024;
+  var running = false, again = false, timer = null, lastToast = 0;
+
+  function apiBase(){ return String(window.SJ_API_BASE || localStorage.getItem('sj_api_base') || '').trim().replace(/\/+$/, ''); }
+  function token(){ try{ return localStorage.getItem('sj_token') || ''; }catch(e){ return ''; } }
+  function modules(){ try{ return (window.CLOUD_KEYS || CLOUD_KEYS || []).slice(); }catch(e){ return []; } }
+  function say(msg, kind){ try{ (window.toastSafe || window.toast || console.log)(msg, kind || 'info'); }catch(e){} }
+  function sayOnce(msg, kind){ if(Date.now() - lastToast > 20000){ lastToast = Date.now(); say(msg, kind); } }
+  function pill(text, cls){
+    var el = document.getElementById('sjpSyncStatus');
+    if(el){ el.textContent = text; el.className = 'sjp-sync-pill ' + (cls || 'online'); }
+  }
+  function hash(s){   // two FNV-1a passes -> 16 hex chars; enough to notice a changed record
+    var a = 0x811c9dc5, b = 0x01000193 ^ s.length;
+    for(var i = 0; i < s.length; i++){ var c = s.charCodeAt(i); a = Math.imul(a ^ c, 0x01000193); b = Math.imul(b ^ c, 0x5bd1e995); }
+    return ('0000000' + (a >>> 0).toString(16)).slice(-8) + ('0000000' + (b >>> 0).toString(16)).slice(-8);
+  }
+  function readJSON(key, dflt){ try{ var v = localStorage.getItem(key); return v ? JSON.parse(v) : dflt; }catch(e){ return dflt; } }
+  function writeJSON(key, v){
+    try{ localStorage.setItem(key, JSON.stringify(v)); return true; }
+    catch(e){ sayOnce('Phone storage is full; some synced data could not be saved on this device.', 'error'); return false; }
+  }
+
+  function api(method, path, body, keepalive){
+    var h = { 'Content-Type': 'application/json' };
+    if(token()) h.Authorization = 'Bearer ' + token();
+    return fetch(apiBase() + path, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', keepalive: !!keepalive })
+      .then(function(r){
+        return r.json().catch(function(){ return {}; }).then(function(j){
+          if(!r.ok){ var e = new Error(j.error || ('server ' + r.status)); e.status = r.status; throw e; }
+          return j;
+        });
+      });
+  }
+
+  // ── per-module working copies, loaded once per sync and written back at the end ──
+  function Store(){ this.data = {}; this.meta = {}; this.dirty = {}; }
+  Store.prototype.load = function(k){
+    if(!(k in this.data)){ this.data[k] = readJSON('sj3_' + k, null); this.meta[k] = readJSON('sj_meta_' + k, {}); }
+  };
+  Store.prototype.save = function(){
+    for(var k in this.dirty){ writeJSON('sj3_' + k, this.data[k]); writeJSON('sj_meta_' + k, this.meta[k]); }
+    this.dirty = {};
+  };
+  Store.prototype.isObjectModule = function(k){ var v = this.data[k]; return v && typeof v === 'object' && !Array.isArray(v); };
+  Store.prototype.find = function(k, id){
+    var v = this.data[k];
+    if(id === '_' && !Array.isArray(v)) return { obj: v };
+    if(!Array.isArray(v)) return null;
+    for(var i = 0; i < v.length; i++) if(v[i] && String(v[i].id) === id) return { idx: i, obj: v[i] };
+    return null;
+  };
+  // Put a server record into local storage. force=false skips records edited locally since the last sync.
+  Store.prototype.apply = function(rec, force, sentHash){
+    var k = rec.module, id = String(rec.id);
+    if(modules().indexOf(k) < 0) return false;
+    this.load(k);
+    var m = this.meta[k], hit = this.find(k, id);
+    if(hit && !force && m[id] && m[id][1] !== hash(JSON.stringify(hit.obj))) return false;         // unsynced local edit
+    if(hit && force && sentHash && hash(JSON.stringify(hit.obj)) !== sentHash){ if(m[id]) m[id][0] = rec.version; else m[id] = [rec.version, '']; this.dirty[k] = 1; return false; } // edited again meanwhile
+    if(hit && !force && !m[id] && hit.obj && rec.data && String(hit.obj._up || '') > String(rec.data._up || '')){ m[id] = [rec.version, '']; this.dirty[k] = 1; return false; } // first sync: newer local copy is pushed next
+    if(id === '_' && !Array.isArray(this.data[k])){
+      if(rec.deleted) return false;
+      this.data[k] = rec.data;
+    } else {
+      if(!Array.isArray(this.data[k])) this.data[k] = [];
+      if(rec.deleted){ if(hit) this.data[k].splice(hit.idx, 1); delete m[id]; this.dirty[k] = 1; return !!hit; }
+      if(hit) this.data[k][hit.idx] = rec.data; else this.data[k].push(rec.data);
+    }
+    m[id] = [rec.version, hash(JSON.stringify(rec.data))];
+    this.dirty[k] = 1;
+    return true;
+  };
+  // Local records that differ from what was last synced.
+  Store.prototype.changes = function(){
+    var out = [], self = this, nowIso = new Date().toISOString();
+    modules().forEach(function(k){
+      self.load(k);
+      var v = self.data[k], m = self.meta[k], seen = {};
+      function consider(id, rec){
+        seen[id] = 1;
+        var h = hash(JSON.stringify(rec)), mm = m[id];
+        if(!mm || mm[1] !== h) out.push({ module: k, id: id, data: rec, deleted: rec._del === true, baseVersion: mm ? mm[0] : null, _h: h });
+      }
+      if(Array.isArray(v)){
+        v.forEach(function(r){ if(r && typeof r === 'object' && r.id != null && r.id !== '') consider(String(r.id), r); });
+      } else if(v && typeof v === 'object'){
+        consider('_', v);
+      }
+      Object.keys(m).forEach(function(id){
+        if(seen[id]) return;
+        if(TRIMMED[k]){ delete m[id]; self.dirty[k] = 1; return; }                     // trimmed on this phone only
+        out.push({ module: k, id: id, data: { id: id, _del: true, _up: nowIso }, deleted: true, baseVersion: m[id][0], _h: null });
+      });
+    });
+    return out;
+  };
+
+  function batches(list){
+    var out = [], cur = [], size = 0;
+    list.forEach(function(c){
+      var n = JSON.stringify(c.data).length;
+      if(cur.length && (cur.length >= BATCH || size + n > BATCH_BYTES)){ out.push(cur); cur = []; size = 0; }
+      cur.push(c); size += n;
+    });
+    if(cur.length) out.push(cur);
+    return out;
+  }
+
+  async function pushAll(store){
+    var list = store.changes(), applied = 0, rejected = 0, blocked = 0;
+    for(var bi = 0, bs = batches(list); bi < bs.length; bi++){
+      var batch = bs[bi];
+      var res = await api('POST', '/api/sync', { changes: batch.map(function(c){ return { module: c.module, id: c.id, data: c.data, deleted: c.deleted, baseVersion: c.baseVersion }; }) });
+      (res.results || []).forEach(function(r, i){
+        var c = batch[i]; if(!c) return;
+        store.load(c.module);
+        if(r.status === 'applied' && r.record){ store.apply(r.record, true, c._h); applied++; return; }
+        if(c.baseVersion != null) rejected++;                                       // first-sync overlaps are expected
+        if(/bulk delete/.test(r.reason || '')) blocked++;
+        if(r.record) store.apply(r.record, true, c._h);                                 // server copy wins
+        else if(c.deleted){ delete store.meta[c.module][c.id]; store.dirty[c.module] = 1; }
+        else { store.meta[c.module][c.id] = [c.baseVersion, c._h]; store.dirty[c.module] = 1; }   // invalid: stop retrying
+        console.warn('SwamiJet sync: rejected', c.module, c.id, r.reason);
+      });
+      store.save();
+    }
+    if(blocked) say('The server blocked deleting many records at once. Ask an admin if this was intended.', 'error');
+    else if(rejected) sayOnce(rejected + ' change(s) were refused by the server (a newer copy exists, or no permission). Showing the server copy.', 'info');
+    return applied;
+  }
+
+  async function pullAll(store){
+    var since = Number(localStorage.getItem('sj_sync_since') || 0), changed = 0, page;
+    do {
+      page = await api('GET', '/api/sync?since=' + since + '&limit=2000');
+      (page.changes || []).forEach(function(rec){ if(store.apply(rec, false)) changed++; });
+      store.save();
+      since = page.nextSince;
+      try{ localStorage.setItem('sj_sync_since', String(since)); }catch(e){}
+    } while(page.more);
+    return changed;
+  }
+
+  function refreshPage(){
+    try{
+      if(document.querySelector('.modal.open, .mBox.open')) return;                    // don't disturb a form being filled
+      var ap = document.querySelector('.page.on');
+      if(ap && typeof goPage === 'function' && (window.CU || typeof CU !== 'undefined' && CU)) goPage(ap.id.slice(2));
+    }catch(e){}
+  }
+
+  function sessionExpired(){
+    try{ localStorage.removeItem('sj_token'); localStorage.removeItem('sj_user'); }catch(e){}
+    pill('Login needed', 'offline');
+    if(window.CU || (typeof CU !== 'undefined' && CU)){
+      say('Your session ended. Please log in again.', 'error');
+      try{ window.doLogout(); }catch(e){}
+    }
+  }
+
+  // One full cycle: push local edits, then pull everything newer from the server.
+  async function sync(){
+    if(!token()) { pill('Login needed', 'offline'); return false; }
+    if(running){ again = true; return false; }
+    running = true; pill('Syncing...', 'update');
+    try{
+      var store = new Store();
+      await pushAll(store);
+      var changed = await pullAll(store);
+      try{ localStorage.setItem('sj_last_sync_at', new Date().toISOString()); }catch(e){}
+      pill('Online Synced', 'online');
+      if(changed) refreshPage();
+      return true;
+    }catch(e){
+      if(e.status === 401){ sessionExpired(); return false; }
+      pill(navigator.onLine === false ? 'Offline - Pending Sync' : 'Sync Failed', 'offline');
+      console.warn('SwamiJet sync failed:', e.message);
+      return false;
+    }finally{
+      running = false;
+      if(again){ again = false; schedule(500); }
+    }
+  }
+  function schedule(ms){ clearTimeout(timer); timer = setTimeout(sync, ms == null ? 1500 : ms); }
+
+  // ── take over the old sync entry points ──
+  window.sjServerSync = { sync: sync, schedule: schedule, apiBase: apiBase };
+  window.cloudEnabled = function(){ return !!token(); };
+  window.supabaseEnabled = function(){ return true; };          // "cloud configured", used by older status UI
+  window.cloudQueuePush = function(){ if(token()) schedule(); };
+  window.cloudPull = function(cb){ sync().then(function(ok){ if(cb) cb(ok); }); };
+  window.cloudSend = function(payload, cb){ sync().then(function(ok){ if(cb) cb(ok); }); };
+  window.cloudFlush = function(){ sync(); };
+  window.forceSyncNow = window.forceCloudSync = function(){
+    sync().then(function(ok){ say(ok ? 'Sync completed' : 'Sync failed - check internet', ok ? 'success' : 'error'); });
+  };
+  window.openSupabaseSetup = function(){
+    var cur = localStorage.getItem('sj_api_base') || '';
+    var v = prompt('SwamiJet server address.\nLeave blank when the app is opened from the server itself.', cur);
+    if(v === null) return;
+    v = String(v).trim().replace(/\/+$/, '');
+    if(v && !/^https:\/\/[^\s/]+/i.test(v) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(v)){ say('Address must start with https://', 'error'); return; }
+    try{ if(v) localStorage.setItem('sj_api_base', v); else localStorage.removeItem('sj_api_base'); localStorage.removeItem('sj_sync_since'); }catch(e){}
+    say('Server address saved.', 'success');
+  };
+
+  function val(id){ var e = document.getElementById(id); return e ? String(e.value || '').trim() : ''; }
+  function finishLogin(user){
+    // window.DB only exists after startApp(), so read and write storage directly here.
+    var team = readJSON('sj3_team', []) || [], m = null;
+    for(var i = 0; i < team.length; i++) if(team[i] && !team[i]._del && String(team[i].id) === String(user.memberId)){ m = team[i]; break; }
+    if(!m) m = { id: user.memberId || ('u' + user.userId), name: user.name || user.username, username: user.username, role: user.role, active: true };
+    try{ window.CU = m; CU = m; }catch(e){ window.CU = m; }
+    try{ localStorage.setItem('sj3_sess', JSON.stringify(m.id)); }catch(e){}
+    try{ localStorage.setItem('sj3_savedLogin', JSON.stringify({ u: user.username })); }catch(e){}
+    startApp();
+  }
+  window.doLogin = function(){
+    var u = val('lu').toLowerCase(), p = val('lp'), btn = document.getElementById('loginBtn'), old = btn ? btn.innerHTML : '';
+    if(!u || !p){ say('Enter username and password', 'error'); return; }
+    if(btn){ btn.disabled = true; btn.textContent = 'Signing in...'; }
+    function done(){ if(btn){ btn.disabled = false; btn.innerHTML = old; } }
+    api('POST', '/api/auth/login', { username: u, password: p }).then(function(r){
+      localStorage.setItem('sj_token', r.token);
+      localStorage.setItem('sj_user', JSON.stringify(r.user));
+      if(btn) btn.textContent = 'Loading data...';
+      return sync().then(function(){ done(); finishLogin(r.user); });
+    }).catch(function(e){
+      done();
+      if(e.status === 401) say('Invalid username or password', 'error');
+      else if(e.status === 429) say('Too many attempts. Wait 15 minutes and try again.', 'error');
+      else say('Cannot reach the SwamiJet server. Logging in needs internet.', 'error');
+    });
+  };
+  window.doLogin.__sj489 = true;                                  // keep the older login wrapper from re-wrapping this
+  window.doLoginLocal = window.doLogin;
+
+  var oldLogout = window.doLogout;
+  window.doLogout = function(){
+    var t = token();
+    try{ localStorage.removeItem('sj_token'); localStorage.removeItem('sj_user'); }catch(e){}
+    if(t) fetch(apiBase() + '/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + t }, keepalive: true }).catch(function(){});
+    pill('Login needed', 'offline');
+    if(typeof oldLogout === 'function') return oldLogout.apply(this, arguments);
+  };
+
+  // Send unsaved edits when the app is closed (small payloads only; the rest goes next time).
+  window.addEventListener('pagehide', function(){
+    if(!token() || running) return;
+    try{
+      var list = new Store().changes();
+      var body = JSON.stringify({ changes: list.map(function(c){ return { module: c.module, id: c.id, data: c.data, deleted: c.deleted, baseVersion: c.baseVersion }; }) });
+      if(list.length && body.length < 60000) api('POST', '/api/sync', JSON.parse(body), true).catch(function(){});
+    }catch(e){}
+  });
+  window.addEventListener('online', function(){ schedule(300); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') schedule(300); });
+
+  // Startup: drop any saved Supabase settings; a session restored from before the server needs a fresh login.
+  function boot(){
+    try{ localStorage.removeItem('sj_supabase_url'); localStorage.removeItem('sj_supabase_anon'); }catch(e){}
+    var loggedIn = !!(window.CU || (typeof CU !== 'undefined' && CU));
+    if(loggedIn && !token()){
+      say('SwamiJet now uses its own server. Please log in again.', 'info');
+      try{ window.doLogout(); }catch(e){}
+      return;
+    }
+    if(token()){
+      api('GET', '/api/auth/me').then(function(){ schedule(0); })
+        .catch(function(e){ if(e.status === 401) sessionExpired(); else pill('Offline - Pending Sync', 'offline'); });
+    } else pill('Login needed', 'offline');
+  }
+  setTimeout(boot, 2500);                                         // after the older layers finish their own start-up timers
 })();
 </script>
 </body>

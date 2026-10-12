@@ -1,5 +1,5 @@
-const APP_VERSION = '5.9.41';
-const CACHE = 'swamijet-v5941';
+const APP_VERSION = '5.9.42';
+const CACHE = 'swamijet-v5942';
 const ASSETS = ['./','./index.html','./manifest.json','./version.json','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 
 self.addEventListener('install', function(e){
@@ -20,6 +20,8 @@ self.addEventListener('activate', function(e){
 self.addEventListener('fetch', function(e){
   if (e.request.method !== 'GET') return;
   var url = new URL(e.request.url);
+  // v5.9.42: never cache server API calls or other sites; always go to the network.
+  if (url.origin !== self.location.origin || url.pathname.indexOf('/api/') === 0) return;
 
   // v5.6.2: HTML + version.json are NETWORK-FIRST so new deploys appear
   // immediately (no more stale cached builds). Cache is used only when offline.
