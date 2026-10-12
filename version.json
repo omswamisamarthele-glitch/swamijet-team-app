@@ -1,5 +1,5 @@
 {
-  "version": "5.9.42",
-  "message": "v5.9.42 — SwamiJet now runs on its own server with a PostgreSQL database instead of Supabase. Please log in again once. Each record now syncs on its own, so edits on two phones no longer overwrite each other, and passwords are checked by the server and never stored on phones. Your data stays on this device until it is synced.",
+  "version": "5.9.43",
+  "message": "v5.9.43 — Changes now sync on their own: your edits are sent within seconds and other people's changes appear without reloading. A change the server does not allow is removed from your phone so it shows the real data.",
   "force": true
 }

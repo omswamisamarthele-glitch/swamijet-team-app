@@ -9,7 +9,8 @@ Supabase is dropped. The owner chose **own server on a VPS with PostgreSQL**. Bu
 - `server/` Node.js 22 + `pg` (only dependency), plain `node:http`. Serves the app and `/api/*`.
 - PostgreSQL 16: `records` (one row per app record, server version + change `seq`), `records_history`
   (trigger keeps every overwritten version), `users`, `sessions`, `sync_events`, `schema_migrations`.
-- Deploy: `docker-compose.yml` = postgres + app + Caddy (auto HTTPS) + nightly `pg_dump` backup. Guide: `docs/DEPLOY.md`.
+- Deploy (no Docker, owner's choice): `deploy/install-ubuntu.sh` = Ubuntu packages (nodejs, postgresql, caddy), systemd
+  service on 127.0.0.1:8080, Caddy HTTPS, cron `pg_dump` backup. Guide: `docs/DEPLOY.md`. Local: `npm run setup` / `npm start`.
 - Ops: `docs/RUNBOOK.md`. Import from Supabase: `server/scripts/import-app-data.js` (file or live Supabase URL).
 
 ## How it works now
@@ -73,3 +74,4 @@ Supabase is dropped. The owner chose **own server on a VPS with PostgreSQL**. Bu
 | 2026-10-12 | v5.9.41 Phase 0: removed 4 admin/admin123 paths, hash-as-password, versions aligned, Sheets retired |
 | 2026-10-12 | Owner chose own VPS + PostgreSQL. v5.9.42: `server/`, sjServerSync layer, Docker deploy, import script; Supabase SDK, keys and Phase 0 Supabase SQL removed. Tests: server 13/13, e2e 12/12 (two-phone sync, conflicts, permissions, import, session), full compose stack + backup + restore checked locally. **Not deployed yet.** |
 | 2026-10-12 | Local testing kit: `docker-compose.local.yml` (http://localhost:8080), `server/.env` support, `server/scripts/seed-demo.js`, guide `docs/LOCAL_TESTING.md`. Both routes (Docker / plain Node) verified; browser walkthrough OK. Note: calling `goPage()` directly leaves pages with inline display:none; real nav buttons work. E2E 'all pages' check only checks the `.on` class. |
+| 2026-10-12 | Docker removed (owner: keep it simple). `npm run setup` creates .env + database; VPS via `deploy/install-ubuntu.sh`. Fresh-PC test (password-protected PostgreSQL, code from GitHub ZIP, guide followed literally) found and fixed 2 bugs: (1) edits were not uploaded automatically and other phones only updated on reload, because older code calls private copies of cloudQueuePush; fix = sjServerSync watches localStorage writes + 20 s sync timer (edit now reaches another phone in ~2-12 s); (2) a record the server refused for permissions stayed on the phone; now removed (server returns `code`). E2E now 13 checks incl. automatic sync with no manual calls and real menu navigation. |

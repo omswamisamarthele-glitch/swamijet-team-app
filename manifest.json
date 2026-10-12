@@ -3,7 +3,7 @@
   "short_name": "SwamiJet",
   "description": "Om Swami Samarth Electrical & CCTV House - Team Management",
   "id": "./",
-  "start_url": "./?v=5.9.42",
+  "start_url": "./?v=5.9.43",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

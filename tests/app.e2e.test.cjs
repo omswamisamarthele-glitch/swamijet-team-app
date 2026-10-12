@@ -115,6 +115,15 @@ const editRecord = (page, k, id, patch) => page.evaluate(([k, id, patch]) => {
     }
   });
 
+  await check('an edit reaches the other phone by itself (no manual sync, no reload)', async () => {
+    const t0 = Date.now();
+    await editRecord(A, 'attendance', 12, { note: 'auto-' + t0 });
+    // A uploads on its own within ~2 s; B downloads on its own 20 s timer
+    await B.waitForFunction(v => (JSON.parse(localStorage.getItem('sj3_attendance') || '[]').find(r => r.id === 12) || {}).note === v,
+      'auto-' + t0, { timeout: 35000, polling: 500 });
+    console.log(`  (arrived on the other phone after ${((Date.now() - t0) / 1000).toFixed(1)} s)`);
+  });
+
   await check('a new record and a delete reach the other phone', async () => {
     await A.evaluate(() => { const n = DB.getRaw('notices') || []; n.push({ id: 501, title: 'Holiday', _up: new Date().toISOString() }); DB.set('notices', n); });
     await sync(A); await sync(B);
@@ -133,6 +142,7 @@ const editRecord = (page, k, id, patch) => page.evaluate(([k, id, patch]) => {
     assert(!((await local(A, 'salaryPayments')) || []).some(r => r.id === 901), 'salary record reached admin');
     assert((await local(A, 'team')).find(m => m.id === 1).role === 'Admin', 'owner role changed');
     assert((await local(B, 'team')).find(m => m.id === 1).role === 'Admin', 'B kept its forbidden edit');
+    assert(!((await local(B, 'salaryPayments')) || []).some(r => r.id === 901), 'refused salary record still on B');
   });
 
   await check('admin adds a member; they can log in on another phone', async () => {

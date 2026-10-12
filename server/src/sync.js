@@ -140,7 +140,7 @@ async function push(pool, user, changes, opts = {}) {
           const serverUp = String(cur.data._up || cur.data.updatedAt || '');
           if (!incomingUp || incomingUp <= serverUp) {
             await logEvent(client, user, mod, id, 'conflict-rejected', `base ${c.baseVersion} vs server ${cur.version}`);
-            results.push({ module: mod, id, status: 'rejected', reason: 'newer version on server', record: outRecord(cur) });
+            results.push({ module: mod, id, status: 'rejected', code: 'conflict', reason: 'newer version on server', record: outRecord(cur) });
             await client.query('release savepoint ch');
             continue;
           }
@@ -163,7 +163,7 @@ async function push(pool, user, changes, opts = {}) {
         if (e.kind !== 'bulk-delete-blocked') await logEvent(client, user, c && c.module, id, e.kind, e.message);
         const cur = c && MODULE_RE.test(String(c.module || '')) && id
           ? (await client.query('select * from records where module=$1 and id=$2', [c.module, id])).rows[0] : null;
-        results.push({ module: c && c.module, id, status: 'rejected', reason: e.message, record: cur ? outRecord(cur) : null });
+        results.push({ module: c && c.module, id, status: 'rejected', code: e.kind, reason: e.message, record: cur ? outRecord(cur) : null });
       }
     }
     await client.query('commit');
