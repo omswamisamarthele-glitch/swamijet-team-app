@@ -8,7 +8,7 @@ Docker Compose (`docker-compose.yml`, Caddy for HTTPS). **Supabase is no longer 
 **Read `docs/BACKEND_PLAN.md` first** for any backend, sync, auth or data change: architecture, how sync works,
 findings status, next phases, open decisions. Shared doc: https://claude.ai/code/artifact/662e93c1-9b16-4bb9-b798-afb0f97a4588
 - Branch `claude/eloquent-feynman-8y7xsy`. After each step update the Progress log in `docs/BACKEND_PLAN.md`.
-- Deploy guide `docs/DEPLOY.md`; operations `docs/RUNBOOK.md`.
+- Deploy guide `docs/DEPLOY.md`; operations `docs/RUNBOOK.md`; owner's local test guide `docs/LOCAL_TESTING.md`.
 
 ## Code map
 - `index.html`: the app. Many functions are redefined by later patch blocks; the LAST definition wins. Grep all

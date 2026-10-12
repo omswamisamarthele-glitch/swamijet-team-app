@@ -72,3 +72,4 @@ Supabase is dropped. The owner chose **own server on a VPS with PostgreSQL**. Bu
 | 2026-10-12 | Audit + plan written |
 | 2026-10-12 | v5.9.41 Phase 0: removed 4 admin/admin123 paths, hash-as-password, versions aligned, Sheets retired |
 | 2026-10-12 | Owner chose own VPS + PostgreSQL. v5.9.42: `server/`, sjServerSync layer, Docker deploy, import script; Supabase SDK, keys and Phase 0 Supabase SQL removed. Tests: server 13/13, e2e 12/12 (two-phone sync, conflicts, permissions, import, session), full compose stack + backup + restore checked locally. **Not deployed yet.** |
+| 2026-10-12 | Local testing kit: `docker-compose.local.yml` (http://localhost:8080), `server/.env` support, `server/scripts/seed-demo.js`, guide `docs/LOCAL_TESTING.md`. Both routes (Docker / plain Node) verified; browser walkthrough OK. Note: calling `goPage()` directly leaves pages with inline display:none; real nav buttons work. E2E 'all pages' check only checks the `.on` class. |

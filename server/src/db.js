@@ -3,6 +3,17 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 
+// Read server/.env (KEY=value lines) for local runs; real environment variables win.
+(function loadEnv() {
+  const file = path.join(__dirname, '..', '.env');
+  if (!fs.existsSync(file)) return;
+  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+    if (!m || line.trim().startsWith('#')) continue;
+    if (process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+  }
+})();
+
 function createPool(connectionString = process.env.DATABASE_URL) {
   if (!connectionString) throw new Error('DATABASE_URL is not set');
   return new Pool({ connectionString, max: Number(process.env.PG_POOL_MAX || 10) });
