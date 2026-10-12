@@ -14,4 +14,5 @@ Single-file PWA (`index.html`, ~1 MB plain JS) for Om Swami Samarth Electrical &
 - Never clear localStorage/IndexedDB in update code; business data lives there.
 
 ## Testing
+See `tests/README.md`. Browser: `NODE_PATH=/opt/node-tools/node_modules PW_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node tests/phase0.test.cjs`. DB: local PG16 is installed (`/usr/lib/postgresql/16/bin`); run SQL tests only on a db named `swamijet_test`. Ops procedures: `docs/RUNBOOK.md`.
 Serve with `python3 -m http.server 8765` and drive with Playwright (`/opt/node-tools/node_modules/playwright`, Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`): load, log in, `goPage()` each of the 23 `.page` ids, collect page errors.

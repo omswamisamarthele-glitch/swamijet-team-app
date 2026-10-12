@@ -426,7 +426,7 @@ body.role-noadmin .sjp-printbar{display:none!important;}
 @media(max-width:760px){.sjp-sync-pill{display:none}.sjp-update-box{max-width:94vw}}
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4"></script>
 <style id="sjv599">
 /* ================================================================
    SwamiJet v5.9.36 — Bottom-bar navigation + dual-theme accents
@@ -600,7 +600,7 @@ body.light #sjBottomBar{box-shadow:0 -6px 22px rgba(15,23,42,.08);}
   <header>
     <div class="hL">
       <button class="hburger" id="menuBtn" aria-label="Menu">&#9776;</button>
-      <span class="hBrand">&#9889; SwamiJet<span class="sjp-version-badge" id="appVersionBadge" style="display:none">v5.9.40</span></span>
+      <span class="hBrand">&#9889; SwamiJet<span class="sjp-version-badge" id="appVersionBadge" style="display:none">v5.9.41</span></span>
     </div>
     <div class="hR">
       <span class="sjp-sync-pill online" id="sjpSyncStatus" title="Cloud sync status — click to force sync" style="cursor:pointer">Online Synced</span>
@@ -1574,7 +1574,8 @@ var DB = {
 // 1. Create a Google Sheet > Extensions > Apps Script > paste code from google-apps-script.gs
 // 2. Deploy > New deployment > Web app > Execute as: Me, Who has access: Anyone > Deploy
 // 3. Copy the Web app URL (ends with /exec) and paste it between the quotes below:
-var SHEET_API_URL='https://script.google.com/macros/s/AKfycbyEYLiz7YBdvJCLKAf6ETctFB_3qLH_Vs7TYr6Hux8kbtbFMn-PQYbHaVPb8gpKiI0v/exec';
+// v5.9.41: legacy Google Sheets sync retired; Supabase is the only cloud store.
+var SHEET_API_URL='';
 
 // ── SUPABASE SYNC (recommended permanent sync) ──
 // Fill these two values after creating Supabase project + app_data table.
@@ -1698,6 +1699,7 @@ function cloudSend(payload,cb){
       });
     }
   }catch(e){}
+  if(!SHEET_API_URL){ if(cb)cb(false); return; }
   fetch(SHEET_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)})
     .then(function(r){return r.json();})
     .then(function(res){
@@ -1822,7 +1824,7 @@ window.addEventListener('pagehide',function(){
       }
     }
     // Fallback: Google Sheets via sendBeacon
-    navigator.sendBeacon(SHEET_API_URL, new Blob([JSON.stringify({bulk:bulk})],{type:'text/plain;charset=utf-8'}));
+    if(SHEET_API_URL) navigator.sendBeacon(SHEET_API_URL, new Blob([JSON.stringify({bulk:bulk})],{type:'text/plain;charset=utf-8'}));
   }catch(e){}
 });
 
@@ -2232,6 +2234,8 @@ function ensureDefaultAdminIfNoTeam(){
   var team=DB.getRaw('team')||[];
   var liveTeam=(team||[]).filter(function(m){return m && !m._del && m.active!==false;});
   if(liveTeam.length){ DB.set('seededV3',true); return; }
+  // v5.9.41: only bootstrap admin/admin123 when the cloud confirmed it has no team (brand-new database).
+  if(window.__sjCloudTeamEmpty!==true) return;
   var ts=(typeof nowISO==='function')?nowISO():new Date().toISOString();
   DB.set('team',[{id:1,name:'Admin',mobile:'',role:'Admin',username:'admin',password:'admin123',salType:'Monthly',rate:0,openBal:0,leaves:0,address:'',active:true,_up:ts}]);
   ['attendance','siteReports','payments','tasks','notices','sops','sopComp','kraComp','jobcards','advances','salHist'].forEach(function(k){
@@ -2861,16 +2865,6 @@ function doLoginLocal(){
       CU=m;
       _persistSession(m);
       startApp();
-    } else if(u==='admin' && p==='admin123'){
-      // Recovery: never let the owner get locked out of the default admin account
-      var tm=DB.getRaw('team')||[];
-      var adminRec=tm.find(function(x){return String(x.username||'').toLowerCase()==='admin';});
-      if(adminRec){ adminRec.password='admin123'; adminRec.active=true; adminRec._up=new Date().toISOString(); }
-      else { adminRec={id:1,name:'Admin',mobile:'',role:'Admin',username:'admin',password:'admin123',salType:'Monthly',rate:0,openBal:0,leaves:0,address:'',active:true,_up:new Date().toISOString()}; tm.push(adminRec); }
-      DB.set('team',tm);
-      CU=adminRec;
-      _persistSession(adminRec);
-      startApp();
     } else {
       toast('Invalid username or password. Check Admin > Team > Edit for credentials.','error');
     }
@@ -2883,7 +2877,7 @@ function doLogout(){
     if(cloudOn && cloudEnabled() && Object.keys(cloudQueue).length){
       var bulk={};
       Object.keys(cloudQueue).forEach(function(k){ bulk[k]=DB.getRaw(k)||[]; });
-      navigator.sendBeacon(SHEET_API_URL, new Blob([JSON.stringify({bulk:bulk})],{type:'text/plain;charset=utf-8'}));
+      if(SHEET_API_URL) navigator.sendBeacon(SHEET_API_URL, new Blob([JSON.stringify({bulk:bulk})],{type:'text/plain;charset=utf-8'}));
       cloudQueue={};
     }
   }catch(e){}
@@ -6613,7 +6607,7 @@ function factoryReset(){
   if(!isAdmin()){toast('Admin only','error');return;}
   var ok=confirm('⚠️ FACTORY RESET\n\nThis will PERMANENTLY DELETE all data (team, attendance, payments, site reports, tasks, everything) on this device AND the cloud.\n\nAll other devices will be wiped on next sync.\n\nThis CANNOT be undone.\n\nClick OK to continue, Cancel to abort.');
   if(!ok) return;
-  var ok2=confirm('Are you absolutely sure?\n\nType-level final confirmation: this erases EVERYTHING except the default admin login (admin / admin123).\n\nClick OK to proceed with reset.');
+  var ok2=confirm('Are you absolutely sure?\n\nType-level final confirmation: this erases EVERYTHING on this device.\n\nClick OK to proceed with reset.');
   if(!ok2) return;
   try{
     // Clear all cloud data keys locally + all seed flags so seed() re-runs
@@ -6625,7 +6619,7 @@ function factoryReset(){
     if(cloudEnabled()){
       var bulk={};
       CLOUD_KEYS.forEach(function(k){ bulk[k]=DB.getRaw(k)||[]; });
-      fetch(SHEET_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({bulk:bulk,reset:true})})
+      (SHEET_API_URL?fetch(SHEET_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({bulk:bulk,reset:true})}):Promise.resolve())
         .finally(function(){
           toast('✅ Factory reset complete. Reloading...','success');
           setTimeout(function(){location.reload();},1500);
@@ -9231,7 +9225,7 @@ cloudInit(function(){
 // =============================================================
 (function(){
   'use strict';
-  var FIX_VERSION='5.9.36';
+  var FIX_VERSION='5.9.41';
   window.SWAMI_VERSION=FIX_VERSION;
 
   // v5.4.1 ROOT FIX: Declare every name this IIFE assigns to. Block 2 (the
@@ -9579,18 +9573,13 @@ cloudInit(function(){
     var u=val('lu').toLowerCase(), p=val('lp'); if(!u||!p){toast('Enter username and password','error');return;}
     var team=DB.get('team')||[], m=null;
     for(var i=0;i<team.length;i++){
-      if(norm(team[i].username)===u && String(team[i].password||'')===p && team[i].active!==false){m=team[i];break;}
+      if(norm(team[i].username)===u && !isHashed(team[i].password) && String(team[i].password||'')===p && team[i].active!==false){m=team[i];break;}
     }
     function login(mem){CU=mem;DB.set('sess',mem.id);localStorage.setItem('sj3_savedLogin',JSON.stringify({u:u}));startApp();}
     if(m){login(m);return;}
     hashPassword(p).then(function(h){
       for(var i=0;i<team.length;i++){if(norm(team[i].username)===u && String(team[i].password||'')===h && team[i].active!==false){m=team[i];break;}}
       if(m){login(m);return;}
-      if(u==='admin'&&p==='admin123'){
-        var tm=DB.getRaw('team')||[];var a=tm.find(function(x){return norm(x.username)==='admin';});
-        if(a){a.password='admin123';a.active=true;a._up=now();}else{a={id:1,name:'Admin',mobile:'',role:'Admin',username:'admin',password:'admin123',salType:'Monthly',rate:0,openBal:0,leaves:0,address:'',active:true,_up:now()};tm.push(a);}
-        DB.set('team',tm);login(a);return;
-      }
       toast('Invalid username or password','error');
     });
   };
@@ -9888,7 +9877,7 @@ cloudInit(function(){
 <script>
 // Cloudflare Pages PWA update + safe version system
 (function(){
-  var APP_VERSION='5.9.36';
+  var APP_VERSION='5.9.41';
   var VERSION_URL='./version.json?ts='+Date.now();
   window.SWAMI_VERSION=APP_VERSION;
   window.SWAMIJET_APP_VERSION=APP_VERSION;
@@ -9971,7 +9960,7 @@ cloudInit(function(){
 <script>
 // v4.8.6 cross-device login hardening: always pull cloud first, support plaintext and SHA-256 passwords, and show sync-specific error.
 (function(){
-  var FIX_VERSION='5.9.36';
+  var FIX_VERSION='5.9.41';
   function byId(id){return document.getElementById(id);} 
   function val(id){var e=byId(id);return e?String(e.value||'').trim():'';}
   function norm(v){return String(v||'').trim().toLowerCase();}
@@ -9980,7 +9969,7 @@ cloudInit(function(){
   async function passwordOk(stored,typed){
     stored=String(stored||'').trim(); typed=String(typed||'').trim();
     if(!stored) return false;
-    if(stored===typed) return true;
+    if(stored===typed && !/^[0-9a-f]{64}$/i.test(stored)) return true; // v5.9.41: a stored hash is never itself a password
     // v5.2.1: Use window.hashPassword (exported immediately at module load)
     var hf = (typeof hashPassword==='function')?hashPassword:(window.hashPassword||null);
     try{ if(hf && stored===await hf(typed)) return true; }catch(e){}
@@ -9999,14 +9988,6 @@ cloudInit(function(){
     if(!u||!p){toast('Enter username and password','error');return;}
     findLoginMember(u,p).then(function(m){
       if(m){ CU=m; DB.set('sess',m.id); localStorage.setItem('sj3_savedLogin',JSON.stringify({u:u})); startApp(); return; }
-      if(u==='admin' && p==='admin123'){
-        try{ if(typeof ensureDefaultAdminIfNoTeam==='function') ensureDefaultAdminIfNoTeam(); }catch(e){}
-        findLoginMember(u,p).then(function(a){
-          if(a){ CU=a; DB.set('sess',a.id); localStorage.setItem('sj3_savedLogin',JSON.stringify({u:u})); startApp(); return; }
-          toast('Cloud team data not loaded. Open DB setup / check internet, then try again.','error');
-        });
-        return;
-      }
       var t=liveTeam();
       // v5.0.0: Detect WHY login failed and show actionable error
       var dbConfigured = false;
@@ -10064,7 +10045,7 @@ cloudInit(function(){
 <script>
 // v4.8.9 task assignment + daily tasks polish + login timeout hardening
 (function(){
-  var FIX_VERSION='5.4.0';
+  var FIX_VERSION='5.9.41';
   function byId(id){return document.getElementById(id);} 
   function txt(v){return String(v==null?'':v).trim();}
   function norm(v){return txt(v).toLowerCase();}
@@ -10136,7 +10117,7 @@ cloudInit(function(){
 // 4) Make Supabase config helpers global so all later/older patches read the same status.
 // 5) Keep a local backup of team data and restore it if a bad sync returns empty team.
 (function(){
-  var FIX_VERSION='5.4.0';
+  var FIX_VERSION='5.9.41';
   var TABLE=(typeof SUPABASE_TABLE!=='undefined' && SUPABASE_TABLE) ? SUPABASE_TABLE : 'app_data';
   var KEYS=(typeof CLOUD_KEYS!=='undefined' && Array.isArray(CLOUD_KEYS)) ? CLOUD_KEYS : ['team','attendance','siteReports','payments','tasks','notices','sops','sopComp','jobcards','advances','salHist','kraComp','notifications','stock','stockOrdered','adminNotes','activityLog','attendanceAudit','officeGps','paymentSettings','customers','suppliers'];
   function byId(id){return document.getElementById(id);} 
@@ -10180,6 +10161,7 @@ cloudInit(function(){
     var team=raw('team');
     var liveTeam=team.filter(function(m){return m && !m._del && m.active!==false;});
     if(liveTeam.length) return;
+    if(window.__sjCloudTeamEmpty!==true) return; // v5.9.41: never on a failed/unknown pull
     var admin={id:1,name:'Admin',mobile:'',role:'Admin',username:'admin',password:'admin123',salType:'Monthly',rate:0,openBal:0,leaves:0,address:'',active:true,_up:now()};
     setRaw('team',[admin]);
     try{localStorage.setItem('sj3_team_backup',JSON.stringify([admin]));}catch(e){}
@@ -10305,6 +10287,7 @@ cloudInit(function(){
     function _tryPull(){
       _attempt++;
       sbFetchAll().then(function(data){
+        window.__sjCloudTeamEmpty=!(Array.isArray(data.team) && data.team.some(function(m){return m && !m._del && m.active!==false;}));
         applyCloud(data); window.cloudOn=true;
         try{localStorage.setItem('sj_last_sync_at',now()); localStorage.removeItem('sj_last_sync_err');}catch(e){}
         status('Online Synced','bg');
@@ -10352,7 +10335,7 @@ cloudInit(function(){
 
   async function passwordOk(stored,typed){
     stored=t(stored); typed=t(typed); if(!stored) return false;
-    if(stored===typed) return true;
+    if(stored===typed && !/^[0-9a-f]{64}$/i.test(stored)) return true; // v5.9.41: a stored hash is never itself a password
     // v5.2.1: Use window.hashPassword (now exported immediately, not just after login)
     var hf = (typeof hashPassword==='function')?hashPassword:(window.hashPassword||null);
     var sf = (typeof sha256Hex==='function')?sha256Hex:(window.sha256Hex||null);
@@ -10376,10 +10359,6 @@ cloudInit(function(){
     if(!u||!p){toastSafe('Enter username and password','error');return;}
     restoreTeamIfEmpty();
     findUser(u,p).then(function(m){
-      if(!m && u==='admin' && p==='admin123'){
-        ensureAdmin();
-        m=(live('team')||[]).filter(function(x){return norm(x.username)==='admin';})[0]||{id:1,name:'Admin',role:'Admin',username:'admin',password:'admin123',active:true};
-      }
       if(m){
         try{window.CU=m; CU=m;}catch(e){window.CU=m;}
         try{if(typeof DB!=='undefined')DB.set('sess',m.id);else localStorage.setItem('sj3_sess',String(m.id));}catch(e){}
