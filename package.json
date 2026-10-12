@@ -1,0 +1,10 @@
+{
+  "name": "swamijet-team-app",
+  "private": true,
+  "description": "Run these from the repository root; they forward to server/.",
+  "scripts": {
+    "setup": "npm --prefix server install && npm --prefix server run setup",
+    "demo": "npm --prefix server run seed-demo",
+    "start": "npm --prefix server start"
+  }
+}

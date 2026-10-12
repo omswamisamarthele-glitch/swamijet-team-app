@@ -1,5 +1,0 @@
-# DOMAIN comes from .env (e.g. swamijet.example.com). Caddy gets and renews the HTTPS certificate.
-{$DOMAIN} {
-	encode gzip
-	reverse_proxy app:8080
-}

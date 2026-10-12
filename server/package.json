@@ -5,17 +5,20 @@
   "description": "SwamiJet backend: auth + record sync on PostgreSQL",
   "main": "src/server.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
   },
   "scripts": {
+    "setup": "node scripts/setup.js",
     "start": "node src/server.js",
-    "migrate": "node scripts/migrate.js",
+    "seed-demo": "node scripts/seed-demo.js",
     "import": "node scripts/import-app-data.js",
     "create-admin": "node scripts/create-admin.js",
     "reset-password": "node scripts/reset-password.js",
+    "restore-record": "node scripts/restore-record.js",
     "prune-history": "node scripts/prune-history.js",
-    "test": "node --test test/*.test.js",
-    "seed-demo": "node scripts/seed-demo.js"
+    "backup": "sh scripts/backup.sh",
+    "migrate": "node scripts/migrate.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "pg": "8.13.1"

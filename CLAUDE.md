@@ -1,8 +1,9 @@
 # SwamiJet Team App
 
 PWA (`index.html`, ~1 MB plain JS) for Om Swami Samarth Electrical & CCTV House: attendance, tasks, job cards,
-payroll, stock, payments. Backend: own server in `server/` (Node.js + PostgreSQL), deployed on a VPS with
-Docker Compose (`docker-compose.yml`, Caddy for HTTPS). **Supabase is no longer used** (removed in 5.9.42).
+payroll, stock, payments. Backend: own server in `server/` (Node.js + PostgreSQL). **No Docker** (owner's choice):
+local = `npm run setup` / `npm start`; VPS = `deploy/install-ubuntu.sh` (Ubuntu packages, systemd, Caddy, cron backup).
+**Supabase is no longer used** (removed in 5.9.42).
 
 ## Active work
 **Read `docs/BACKEND_PLAN.md` first** for any backend, sync, auth or data change: architecture, how sync works,
@@ -30,5 +31,4 @@ findings status, next phases, open decisions. Shared doc: https://claude.ai/code
   (initdb into /var/tmp/sjpg/data first if missing). Test DB names must end in `_test`.
 - Server: `cd server && TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/swamijet_srv_test npm test`
 - E2E: `TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/swamijet_e2e_test NODE_PATH=/opt/node-tools/node_modules PW_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node tests/app.e2e.test.cjs`
-- Docker works in the sandbox after `dockerd &`; image builds need the proxy CA (see Progress log approach: scratch
-  Dockerfile with `--build-context ca=/root/.ccr` + NODE_EXTRA_CA_CERTS). Don't add that to the real Dockerfile.
+- Server must keep working on Node 18 (Ubuntu 24.04's nodejs package). Do not add Docker files back.

@@ -1,0 +1,17 @@
+[Unit]
+Description=SwamiJet server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+User=swamijet
+WorkingDirectory=__APP_DIR__/server
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

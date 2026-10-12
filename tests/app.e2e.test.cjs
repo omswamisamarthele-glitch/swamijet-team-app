@@ -176,16 +176,38 @@ const editRecord = (page, k, id, patch) => page.evaluate(([k, id, patch]) => {
     assert(await E.evaluate(() => !window.CU), 'old session still active without a server login');
   });
 
-  await check('all pages open without errors; no Supabase/CDN/Sheets requests', async () => {
-    const P = await phone(browser, 'pages');
+  await check('every page opens from the real menu and shows content; no external services called', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const P = await ctx.newPage();
+    P.errors = []; P.blocked = [];
+    P.on('pageerror', e => P.errors.push(e.message));
+    await P.route(/supabase\.co|script\.google\.com|cdn\.jsdelivr\.net|cloudinary\.com/, r => { P.blocked.push(r.request().url()); return r.abort(); });
+    await P.goto(BASE + '/'); await P.waitForTimeout(3000);
+    P.label = 'pages';
     await login(P, 'owner', 'Owner#Pass1');
     const ids = await P.evaluate(() => [...document.querySelectorAll('.page')].map(p => p.id.slice(2)));
-    for (const id of ids) {
-      const ok = await P.evaluate(p => { goPage(p); return document.getElementById('p-' + p).classList.contains('on'); }, id);
-      assert(ok, 'page did not open: ' + id);
-      await P.waitForTimeout(120);
-    }
     assert(ids.length >= 23, 'pages: ' + ids.length);
+    // what the menus offer: bottom bar + "More" sheet; then reload to close the sheet (session persists)
+    await P.click('#sjbbMore'); await P.waitForTimeout(400);
+    const inMenu = new Set(await P.evaluate(() => [...document.querySelectorAll('#sjBottomBar [data-p], .sjSheetItem[data-p]')].map(e => e.getAttribute('data-p'))));
+    await P.reload(); await P.waitForTimeout(4000);
+    const empty = [], notInMenu = ids.filter(id => !inMenu.has(id));
+    for (const id of ids.filter(id => inMenu.has(id))) {
+      // bottom bar if the page is there, otherwise the "More" sheet, like a person would
+      let btn = P.locator(`#sjBottomBar [data-p="${id}"]:visible`).first();
+      if (!(await btn.count())) {
+        await P.click('#sjbbMore');
+        await P.waitForTimeout(300);
+        btn = P.locator(`.sjSheetItem[data-p="${id}"]`).first();
+      }
+      await btn.click();
+      await P.waitForTimeout(250);
+      const st = await P.evaluate(p => { const el = document.getElementById('p-' + p); return { shown: getComputedStyle(el).display !== 'none', text: el.innerText.trim().length }; }, id);
+      if (!st.shown || st.text < 20) empty.push(`${id} (shown=${st.shown}, text=${st.text})`);
+    }
+    assert(!empty.length, 'not shown: ' + empty.join(', '));
+    if (notInMenu.length) console.log('  (pages with no menu entry: ' + notInMenu.join(', ') + ')');
+    assert(notInMenu.length <= 1, 'pages with no menu entry: ' + notInMenu.join(', '));   // 'sites' is hidden by the app itself
     assert(P.errors.length === 0, 'errors: ' + P.errors.join(' | '));
     assert(!P.blocked.some(u => /supabase|script\.google|jsdelivr/.test(u)), 'external calls: ' + P.blocked.join(', '));
     const badge = await P.evaluate(() => document.getElementById('appVersionBadge').textContent);

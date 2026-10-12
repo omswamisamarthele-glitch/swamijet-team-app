@@ -46,4 +46,14 @@ async function migrate(pool) {
   return applied;
 }
 
-module.exports = { createPool, migrate };
+// Turn common connection errors into a plain next step.
+function explainDbError(e) {
+  const url = String(process.env.DATABASE_URL || '');
+  if (!url) return 'DATABASE_URL is not set. Run "npm run setup" first (it creates server/.env).';
+  if (e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND') return 'Cannot reach PostgreSQL. Is it installed and running? Check host/port in server/.env.';
+  if (e.code === '28P01' || e.code === '28000') return 'PostgreSQL refused the username/password. Fix the password in DATABASE_URL in server/.env.';
+  if (e.code === '3D000') return 'The database does not exist yet. Run "npm run setup".';
+  return e.message;
+}
+
+module.exports = { createPool, migrate, explainDbError };

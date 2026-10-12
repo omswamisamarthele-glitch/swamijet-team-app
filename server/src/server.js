@@ -2,7 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { createPool, migrate } = require('./db');
+const { createPool, migrate, explainDbError } = require('./db');
 const auth = require('./auth');
 const sync = require('./sync');
 
@@ -165,7 +165,11 @@ async function start() {
   await bootstrapAdmin(pool);
   const port = Number(process.env.PORT || 8080);
   const server = http.createServer(createApp(pool));
-  server.listen(port, () => console.log(`swamijet server on :${port}, app from ${APP_DIR}`));
+  server.on('error', e => {
+    console.error(e.code === 'EADDRINUSE' ? `Port ${port} is already in use. Set another PORT in server/.env.` : e.message);
+    process.exit(1);
+  });
+  server.listen(port, process.env.HOST || undefined, () => console.log(`swamijet server on :${port}, app from ${APP_DIR}\nOpen http://localhost:${port}`));
   const stop = () => server.close(() => pool.end().then(() => process.exit(0)));
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
@@ -182,6 +186,6 @@ async function bootstrapAdmin(pool) {
   console.log(`bootstrap admin "${user}" created`);
 }
 
-if (require.main === module) start().catch(e => { console.error(e); process.exit(1); });
+if (require.main === module) start().catch(e => { console.error('Could not start: ' + explainDbError(e)); process.exit(1); });
 
 module.exports = { createApp, bootstrapAdmin };

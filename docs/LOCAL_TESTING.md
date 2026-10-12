@@ -1,74 +1,83 @@
-# Test SwamiJet on your own computer
+# Test SwamiJet on your own computer (no Docker)
 
-Runs the full app + server + PostgreSQL on your PC at **http://localhost:8080**. Nothing here touches the live
-Supabase data or the live app.
+You need two free programs: **Node.js** and **PostgreSQL**. Then four commands. The app runs at
+**http://localhost:8080**. Nothing here touches the live Supabase data or the live app.
 
-## 1. Get the code
-Either `git clone https://github.com/omswamisamarthele-glitch/swamijet-team-app.git` then
-`git checkout claude/eloquent-feynman-8y7xsy`, or download the ZIP of that branch:
+## 1. Install (once)
+1. **Node.js 22 LTS**: https://nodejs.org (Windows: the `.msi` installer, all defaults).
+2. **PostgreSQL 16**: https://www.postgresql.org/download/ (Windows: "Download the installer").
+   During install it asks for a password for the user `postgres`. **Write it down.** Keep port `5432`.
+   Stack Builder at the end is not needed; close it.
+
+## 2. Get the code
+Download and unzip:
 https://github.com/omswamisamarthele-glitch/swamijet-team-app/archive/refs/heads/claude/eloquent-feynman-8y7xsy.zip
-and unzip it. Open a terminal (Windows: PowerShell) **in that folder**.
+Open the unzipped folder (the one with `index.html` in it). Windows: click the address bar of that folder,
+type `powershell`, press Enter. A terminal opens in the right place.
 
-## 2a. Easiest: with Docker Desktop
-Install Docker Desktop (https://www.docker.com/products/docker-desktop/) and start it. Then:
-```bash
-docker compose -f docker-compose.local.yml up -d --build                              # first time takes a few minutes
-docker compose -f docker-compose.local.yml exec app node server/scripts/seed-demo.js  # demo data (optional)
+## 3. Set up and start
 ```
-Open **http://localhost:8080**.
+npm run setup
+```
+The first time this creates `server\.env` and probably says the password was refused. Open `server\.env` in
+Notepad, change the second `postgres` in this line to your PostgreSQL password, and save:
+```
+DATABASE_URL=postgres://postgres:YOUR-PASSWORD@localhost:5432/swamijet
+```
+Then:
+```
+npm run setup      # again: creates the swamijet database, ends with "Setup done"
+npm run demo       # optional: demo team, attendance, task, notice
+npm start          # keep this window open; Ctrl+C stops the server
+```
+Open **http://localhost:8080** in Chrome.
 
-| Command | What it does |
-|---|---|
-| `docker compose -f docker-compose.local.yml logs -f app` | show server log |
-| `docker compose -f docker-compose.local.yml down` | stop (data is kept) |
-| `docker compose -f docker-compose.local.yml down -v` | stop and delete all local data (fresh start) |
+Next time only `npm start` is needed. If your password contains `@`, `#`, `/` or `:`, write it URL-encoded
+(`@` = `%40`, `#` = `%23`, `/` = `%2F`, `:` = `%3A`).
 
-## 2b. Without Docker
-1. Install **Node.js 22 LTS** (https://nodejs.org) and **PostgreSQL 16** (https://www.postgresql.org/download/;
-   on Windows remember the password you set for user `postgres`).
-2. Create an empty database named `swamijet` (pgAdmin: right-click Databases > Create, or `createdb -U postgres swamijet`).
-3. Copy `server/.env.example` to `server/.env` and put your postgres password in `DATABASE_URL`.
-4. In the terminal:
-   ```bash
-   cd server
-   npm install
-   npm run seed-demo     # demo data (optional)
-   npm start             # keep this window open; Ctrl+C stops the server
-   ```
-Open **http://localhost:8080**.
-
-## 3. Logins
+## 4. Logins
 | Username | Password | Role |
 |---|---|---|
-| `localadmin` | `LocalTest#2026` | Admin (always created on a new database) |
-| `owner` | `Owner#2026` | Admin (demo data) |
-| `ravi` | `Ravi#2026` | Technician (demo data) |
-| `priya` | `Priya#2026` | Accountant (demo data) |
-
-## 4. Test with your real data (optional)
-This only **reads** from Supabase; Supabase is not changed. The anon key is in Supabase Dashboard > Project Settings > API.
-Afterwards everyone's real username and password work on your local copy.
-```bash
-# Docker:
-docker compose -f docker-compose.local.yml exec -e SUPABASE_ANON_KEY="eyJ..." app node server/scripts/import-app-data.js https://cvcrffxonrmtyaklhgbl.supabase.co
-# Without Docker (inside server/):
-#   PowerShell:  $env:SUPABASE_ANON_KEY="eyJ..."; npm run import -- https://cvcrffxonrmtyaklhgbl.supabase.co
-#   Mac/Linux:   SUPABASE_ANON_KEY="eyJ..." npm run import -- https://cvcrffxonrmtyaklhgbl.supabase.co
-```
+| `localadmin` | `LocalTest#2026` | Admin (created by setup) |
+| `owner` | `Owner#2026` | Admin (demo) |
+| `ravi` | `Ravi#2026` | Technician (demo) |
+| `priya` | `Priya#2026` | Accountant (demo) |
 
 ## 5. What to try
-- [ ] Log in as each role; a wrong password and `admin` / `admin123` must be refused.
-- [ ] Two "phones": a normal window and a private/incognito window, logged in as different users.
-      Edit different records in each, wait a few seconds (or reload), both edits appear in both windows.
-- [ ] As `ravi`: changing salary data or another member is refused and reverts on the next sync.
-- [ ] As admin: add a member with a username and password, then log in as them in the other window.
-- [ ] Deactivate that member: their window is logged out on its next sync.
-- [ ] Offline: turn off Wi-Fi (or Docker/server), make an edit, turn it back on: it syncs.
+- [ ] Log in as each role. A wrong password and `admin` / `admin123` must be refused.
+- [ ] Two "phones": a normal Chrome window and an Incognito window (Ctrl+Shift+N), different users.
+      Change different records in each; within a few seconds (or after a reload) both changes show in both.
+- [ ] As `ravi`: changing salary data or another member is refused and goes back on the next sync.
+- [ ] As admin: Team > add a member with a username and password, then log in as them in the other window.
+- [ ] Deactivate that member: their window logs out on its next sync.
+- [ ] Stop the server (Ctrl+C), make a change, start it again (`npm start`): the change syncs.
 - [ ] Reload the page: you stay logged in.
 
+## Test with your real data (optional)
+This only **reads** from Supabase; Supabase is not changed. The anon key is in Supabase Dashboard >
+Project Settings > API. Afterwards everyone's real username and password work on your local copy.
+In the `server` folder:
+```
+# PowerShell
+$env:SUPABASE_ANON_KEY="eyJ..."; npm run import -- https://cvcrffxonrmtyaklhgbl.supabase.co
+# Mac / Linux
+SUPABASE_ANON_KEY="eyJ..." npm run import -- https://cvcrffxonrmtyaklhgbl.supabase.co
+```
+
+## Start again from empty
+In pgAdmin (installed with PostgreSQL) delete the database `swamijet`, or run
+`psql -U postgres -c "drop database swamijet"`, then `npm run setup` again.
+
+## Common problems
+| Message | Fix |
+|---|---|
+| `'npm' is not recognized` | Node.js is not installed, or open a new PowerShell window after installing |
+| `PostgreSQL refused the username/password` | Fix the password in `server\.env` (step 3) |
+| `Cannot reach PostgreSQL` | PostgreSQL is not running: Windows > Services > postgresql-x64-16 > Start |
+| `Port 8080 is already in use` | Change `PORT=8080` in `server\.env` to e.g. `8090` and open http://localhost:8090 |
+
 ## Testing from a phone
-On the same Wi-Fi, open `http://<your-PC-IP>:8080` (find the IP with `ipconfig` on Windows). Login and sync work,
-but **camera, GPS check-in and install-to-home-screen need HTTPS**, which a plain local address does not have.
-For a quick HTTPS address, install cloudflared and run `cloudflared tunnel --url http://localhost:8080`; it prints
-an `https://...trycloudflare.com` link you can open on the phone (temporary, stops when you close it).
-On the PC itself, `http://localhost:8080` is treated as secure, so the camera works there.
+On the same Wi-Fi, open `http://<your-PC-IP>:8080` (find the IP with `ipconfig`). Login and sync work, but
+**camera, GPS check-in and install-to-home-screen need HTTPS**. For a temporary HTTPS link, install cloudflared
+and run `cloudflared tunnel --url http://localhost:8080`; open the `https://...trycloudflare.com` link it prints.
+On the PC itself `http://localhost:8080` counts as secure, so the camera works there.
