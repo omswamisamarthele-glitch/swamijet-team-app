@@ -32,7 +32,17 @@ npm start          # keep this window open; Ctrl+C stops the server
 ```
 Open **http://localhost:8080** in Chrome.
 
-Next time only `npm start` is needed. If your password contains `@`, `#`, `/` or `:`, write it URL-encoded
+## Every time after that (also after closing the window or restarting the PC)
+The app only works **while the server window is open**. Closing that window (or restarting the PC) stops the
+server, and the browser then shows "This site can't be reached" / `ERR_CONNECTION_REFUSED`.
+To start it again, either:
+- **Windows: double-click `start-windows.bat`** in the SwamiJet folder. It checks the setup, starts the server
+  and opens http://localhost:8080 by itself. Keep its black window open (you can minimise it).
+- or open PowerShell in the SwamiJet folder and run `npm start`, then open http://localhost:8080.
+
+You stay logged in, and edits made earlier are still there.
+
+If your password contains `@`, `#`, `/` or `:`, write it URL-encoded
 (`@` = `%40`, `#` = `%23`, `/` = `%2F`, `:` = `%3A`).
 
 ## 4. Logins
@@ -71,6 +81,7 @@ In pgAdmin (installed with PostgreSQL) delete the database `swamijet`, or run
 ## Common problems
 | Message | Fix |
 |---|---|
+| Browser: "This site can't be reached" / `ERR_CONNECTION_REFUSED` | The server is not running: double-click `start-windows.bat` (or `npm start`) and keep that window open |
 | `'npm' is not recognized` | Node.js is not installed, or open a new PowerShell window after installing |
 | `PostgreSQL refused the username/password` | Fix the password in `server\.env` (step 3) |
 | `Cannot reach PostgreSQL` | PostgreSQL is not running: Windows > Services > postgresql-x64-16 > Start |
