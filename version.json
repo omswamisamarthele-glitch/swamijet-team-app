@@ -1,5 +1,5 @@
 {
-  "version": "5.9.43",
-  "message": "v5.9.43 — Changes now sync on their own: your edits are sent within seconds and other people's changes appear without reloading. A change the server does not allow is removed from your phone so it shows the real data.",
+  "version": "5.9.44",
+  "message": "v5.9.44 — Changes sync on their own: your edits are sent within seconds and other people's changes appear without reloading. When the server cannot be reached the app shows 'Offline - Pending Sync' and sends your changes later.",
   "force": true
 }

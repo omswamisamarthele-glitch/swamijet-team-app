@@ -23,13 +23,14 @@ touch /var/log/swamijet-backup.log && chown swamijet /var/log/swamijet-backup.lo
 
 echo "== database"
 ENV_FILE="$APP_DIR/server/.env"
+PGPORT_REAL="$(sudo -u postgres psql -tAc 'show port')"     # usually 5432; differs if another PostgreSQL was installed first
 if [ ! -f "$ENV_FILE" ]; then
   PW="$(openssl rand -hex 24)"
   sudo -u postgres psql -qtc "select 1 from pg_roles where rolname='swamijet'" | grep -q 1 \
     && sudo -u postgres psql -qc "alter role swamijet password '$PW'" \
     || sudo -u postgres psql -qc "create role swamijet login password '$PW'"
   cat > "$ENV_FILE" <<ENV
-DATABASE_URL=postgres://swamijet:$PW@127.0.0.1:5432/swamijet
+DATABASE_URL=postgres://swamijet:$PW@127.0.0.1:$PGPORT_REAL/swamijet
 PORT=8080
 HOST=127.0.0.1
 TRUST_PROXY=1
@@ -60,8 +61,12 @@ echo "30 2 * * * swamijet BACKUP_DIR=$BACKUP_DIR sh $APP_DIR/server/scripts/back
 echo "== firewall"
 if command -v ufw >/dev/null; then ufw allow OpenSSH >/dev/null; ufw allow 80 >/dev/null; ufw allow 443 >/dev/null; ufw --force enable >/dev/null; fi
 
-sleep 2
-curl -fsS http://127.0.0.1:8080/api/health && echo
+echo "== checking the server"
+for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/api/health >/dev/null 2>&1 && break; sleep 1; done
+if ! curl -fsS http://127.0.0.1:8080/api/health; then
+  echo; echo "The SwamiJet service did not start. See why with: journalctl -u swamijet -n 50"; exit 1
+fi
+echo
 echo "Done. Open https://$DOMAIN"
 echo "Create the first admin:  cd $APP_DIR/server && sudo -u swamijet node scripts/create-admin.js <username> '<password>'"
 echo "Or import from Supabase: see docs/DEPLOY.md"

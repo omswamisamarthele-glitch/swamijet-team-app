@@ -1,5 +1,5 @@
-const APP_VERSION = '5.9.43';
-const CACHE = 'swamijet-v5943';
+const APP_VERSION = '5.9.44';
+const CACHE = 'swamijet-v5944';
 const ASSETS = ['./','./index.html','./manifest.json','./version.json','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 
 self.addEventListener('install', function(e){

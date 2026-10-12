@@ -599,7 +599,7 @@ body.light #sjBottomBar{box-shadow:0 -6px 22px rgba(15,23,42,.08);}
   <header>
     <div class="hL">
       <button class="hburger" id="menuBtn" aria-label="Menu">&#9776;</button>
-      <span class="hBrand">&#9889; SwamiJet<span class="sjp-version-badge" id="appVersionBadge" style="display:none">v5.9.43</span></span>
+      <span class="hBrand">&#9889; SwamiJet<span class="sjp-version-badge" id="appVersionBadge" style="display:none">v5.9.44</span></span>
     </div>
     <div class="hR">
       <span class="sjp-sync-pill online" id="sjpSyncStatus" title="Cloud sync status — click to force sync" style="cursor:pointer">Online Synced</span>
@@ -9212,7 +9212,7 @@ cloudInit(function(){
 // =============================================================
 (function(){
   'use strict';
-  var FIX_VERSION='5.9.43';
+  var FIX_VERSION='5.9.44';
   window.SWAMI_VERSION=FIX_VERSION;
 
   // v5.4.1 ROOT FIX: Declare every name this IIFE assigns to. Block 2 (the
@@ -9864,7 +9864,7 @@ cloudInit(function(){
 <script>
 // Cloudflare Pages PWA update + safe version system
 (function(){
-  var APP_VERSION='5.9.43';
+  var APP_VERSION='5.9.44';
   var VERSION_URL='./version.json?ts='+Date.now();
   window.SWAMI_VERSION=APP_VERSION;
   window.SWAMIJET_APP_VERSION=APP_VERSION;
@@ -9947,7 +9947,7 @@ cloudInit(function(){
 <script>
 // v4.8.6 cross-device login hardening: always pull cloud first, support plaintext and SHA-256 passwords, and show sync-specific error.
 (function(){
-  var FIX_VERSION='5.9.43';
+  var FIX_VERSION='5.9.44';
   function byId(id){return document.getElementById(id);} 
   function val(id){var e=byId(id);return e?String(e.value||'').trim():'';}
   function norm(v){return String(v||'').trim().toLowerCase();}
@@ -10032,7 +10032,7 @@ cloudInit(function(){
 <script>
 // v4.8.9 task assignment + daily tasks polish + login timeout hardening
 (function(){
-  var FIX_VERSION='5.9.43';
+  var FIX_VERSION='5.9.44';
   function byId(id){return document.getElementById(id);} 
   function txt(v){return String(v==null?'':v).trim();}
   function norm(v){return txt(v).toLowerCase();}
@@ -10104,7 +10104,7 @@ cloudInit(function(){
 // 4) Make Supabase config helpers global so all later/older patches read the same status.
 // 5) Keep a local backup of team data and restore it if a bad sync returns empty team.
 (function(){
-  var FIX_VERSION='5.9.43';
+  var FIX_VERSION='5.9.44';
   var TABLE=(typeof SUPABASE_TABLE!=='undefined' && SUPABASE_TABLE) ? SUPABASE_TABLE : 'app_data';
   var KEYS=(typeof CLOUD_KEYS!=='undefined' && Array.isArray(CLOUD_KEYS)) ? CLOUD_KEYS : ['team','attendance','siteReports','payments','tasks','notices','sops','sopComp','jobcards','advances','salHist','kraComp','notifications','stock','stockOrdered','adminNotes','activityLog','attendanceAudit','officeGps','paymentSettings','customers','suppliers'];
   function byId(id){return document.getElementById(id);} 
@@ -14496,7 +14496,8 @@ cloudInit(function(){
       return true;
     }catch(e){
       if(e.status === 401){ sessionExpired(); return false; }
-      pill(navigator.onLine === false ? 'Offline - Pending Sync' : 'Sync Failed', 'offline');
+      // no answer at all (no internet / server down): data is safe on the phone and is sent later
+      pill(navigator.onLine === false || !e.status ? 'Offline - Pending Sync' : 'Sync Failed', 'offline');
       console.warn('SwamiJet sync failed:', e.message);
       return false;
     }finally{
