@@ -12,8 +12,8 @@ if (!fs.existsSync(envFile)) {
   fs.copyFileSync(path.join(__dirname, '..', '.env.example'), envFile);
   console.log('created server/.env (edit the PostgreSQL password in it if setup fails below)');
 }
+const { createPool, migrate, explainDbError } = require('../src/db');   // loads server/.env, checks packages
 const { Client } = require('pg');
-const { createPool, migrate, explainDbError } = require('../src/db');   // loads server/.env
 const { bootstrapAdmin } = require('../src/server');
 
 (async () => {

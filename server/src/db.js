@@ -1,7 +1,12 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
+let Pool;
+try { ({ Pool } = require('pg')); }
+catch (e) {
+  console.error('Packages are not installed yet. In the SwamiJet folder run:  npm run setup');
+  process.exit(1);
+}
 
 // Read server/.env (KEY=value lines) for local runs; real environment variables win.
 (function loadEnv() {

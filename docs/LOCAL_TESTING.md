@@ -12,7 +12,11 @@ You need two free programs: **Node.js** and **PostgreSQL**. Then four commands. 
 ## 2. Get the code
 Download and unzip:
 https://github.com/omswamisamarthele-glitch/swamijet-team-app/archive/refs/heads/claude/eloquent-feynman-8y7xsy.zip
-Open the unzipped folder (the one with `index.html` in it). Windows: click the address bar of that folder,
+Use exactly this link: the green "Code > Download ZIP" button on GitHub gives the `main` branch, which is the
+old live app and has no server in it.
+Windows "Extract All" often makes a folder inside a folder with the same name. Open the **inner** one: the
+folder that directly contains `index.html`, `package.json`, `start-windows.bat` and a `server` folder.
+Opening the outer one gives `Missing script: "start"`. Windows: click the address bar of that folder,
 type `powershell`, press Enter. A terminal opens in the right place.
 
 ## 3. Set up and start
@@ -82,6 +86,8 @@ In pgAdmin (installed with PostgreSQL) delete the database `swamijet`, or run
 | Message | Fix |
 |---|---|
 | Browser: "This site can't be reached" / `ERR_CONNECTION_REFUSED` | The server is not running: double-click `start-windows.bat` (or `npm start`) and keep that window open |
+| `Missing script: "start"` or `Could not read package.json` | Wrong folder, or the `main` ZIP. Go into the folder that contains `package.json` and `server` (see step 2); type `dir` to check |
+| `Packages are not installed yet` | Run `npm run setup` first |
 | `'npm' is not recognized` | Node.js is not installed, or open a new PowerShell window after installing |
 | `PostgreSQL refused the username/password` | Fix the password in `server\.env` (step 3) |
 | `Cannot reach PostgreSQL` | PostgreSQL is not running: Windows > Services > postgresql-x64-16 > Start |
