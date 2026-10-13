@@ -176,6 +176,15 @@ const editRecord = (page, k, id, patch) => page.evaluate(([k, id, patch]) => {
     assert(await A.evaluate(() => !localStorage.getItem('sj_token')), 'token kept after logout');
   });
 
+  await check('an admin with no Team record stays logged in after reload', async () => {
+    execFileSync('node', ['scripts/create-admin.js', 'setupadmin', 'Setup#Admin1'], { cwd: SERVER, env: { ...process.env, DATABASE_URL: DB_URL } });
+    const G = await phone(browser, 'setupadmin');
+    const cu = await login(G, 'setupadmin', 'Setup#Admin1');
+    assert(cu && cu.role === 'Admin', 'login failed: ' + JSON.stringify(cu));
+    await G.reload(); await G.waitForTimeout(5000);
+    assert(await G.evaluate(() => !!window.CU && document.getElementById('loginBtn').offsetParent === null), 'sent back to the login form after reload');
+  });
+
   await check('a session from the Supabase version must log in again', async () => {
     const E = await phone(browser, 'legacy');
     await E.evaluate(() => {

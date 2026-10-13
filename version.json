@@ -1,5 +1,5 @@
 {
-  "version": "5.9.44",
-  "message": "v5.9.44 — Changes sync on their own: your edits are sent within seconds and other people's changes appear without reloading. When the server cannot be reached the app shows 'Offline - Pending Sync' and sends your changes later.",
+  "version": "5.9.45",
+  "message": "v5.9.45 — An admin login that is not in the Team list (for example one created during setup) now stays logged in after reloading the page.",
   "force": true
 }
