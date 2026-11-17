@@ -48,7 +48,7 @@ Supabase is dropped. The owner chose **own server on a VPS with PostgreSQL**. Bu
 | 11–13 | Version drift, unpinned CDN, unused tables | Fixed (Supabase SDK removed) |
 
 ## Next phases
-- **Go-live (owner + Claude):** VPS + domain; `docker compose up`; import from Supabase; check data; switch staff;
+- **Go-live (owner + Claude):** VPS + domain; `deploy/install-ubuntu.sh`; import from Supabase; check data; switch staff;
   delete Supabase project (its key is in git history).
 - **Phase 1 Foundations:** GitHub Actions running `server` tests + `tests/app.e2e.test.cjs`; staging compose project;
   client error reporting endpoint; uptime monitor; automated off-site backups.
