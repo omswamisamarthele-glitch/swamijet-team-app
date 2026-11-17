@@ -3,14 +3,13 @@
 // name ends in _test; every table in it is dropped first.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const http = require('http');
 const crypto = require('crypto');
-const { createPool, migrate } = require('../src/db');
-const { createApp } = require('../src/server');
+const { App } = require('../src/App');
+const { Config } = require('../src/config/Config');
 
 const URL_ = process.env.TEST_DATABASE_URL;
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
-let pool, server, base;
+let app, pool, base;   // pool = the app's Database (has query()), used for direct checks
 
 async function api(method, path, body, token) {
   const r = await fetch(base + path, {
@@ -26,15 +25,15 @@ const t0 = '2026-10-12T00:00:00.000Z', later = '2026-10-12T01:00:00.000Z';
 
 test.before(async () => {
   if (!URL_ || !/_test(\?|$)/.test(new URL(URL_).pathname)) throw new Error('TEST_DATABASE_URL must name a *_test database');
-  pool = createPool(URL_);
+  app = new App(new Config({ databaseUrl: URL_ }), { logger: { log() {}, error: console.error } });
+  pool = app.database;
   await pool.query('drop schema public cascade; create schema public;');
-  await migrate(pool);
-  const { hashPassword } = require('../src/auth');
-  await pool.query(`insert into users(username, name, role, pw_scrypt) values ('boss', 'Boss', 'Admin', $1)`, [await hashPassword('BossPass#1')]);
-  server = http.createServer(createApp(pool)).listen(0);
+  await app.migrator.run();
+  await pool.query(`insert into users(username, name, role, pw_scrypt) values ('boss', 'Boss', 'Admin', $1)`, [await app.hasher.hash('BossPass#1')]);
+  const server = await app.http.listen(0, '127.0.0.1');
   base = `http://127.0.0.1:${server.address().port}`;
 });
-test.after(async () => { server.close(); await pool.end(); });
+test.after(() => app.stop());
 
 test('API needs a login; static app is served', async () => {
   assert.equal((await api('GET', '/api/sync?since=0')).status, 401);

@@ -1,5 +1,5 @@
 {
-  "version": "5.9.45",
-  "message": "v5.9.45 — An admin login that is not in the Team list (for example one created during setup) now stays logged in after reloading the page.",
+  "version": "5.9.46",
+  "message": "v5.9.46 — Internal clean-up of the sync code (no change in how the app works).",
   "force": true
 }

@@ -1,8 +1,8 @@
 'use strict';
-const { createPool, migrate } = require('../src/db');
-(async () => {
-  const pool = createPool();
-  const applied = await migrate(pool);
+// Applies pending database migrations. Usage: npm run migrate
+const { runScript } = require('./lib/runScript');
+
+runScript(async app => {
+  const applied = await app.migrator.run();
   console.log(applied.length ? `applied: ${applied.join(', ')}` : 'database is up to date');
-  await pool.end();
-})().catch(e => { console.error(e.message); process.exit(1); });
+});

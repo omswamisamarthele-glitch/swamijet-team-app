@@ -1,8 +1,8 @@
 'use strict';
 // Fills an EMPTY database with demo data for local testing.
-// Usage: node scripts/seed-demo.js        Logins: owner / Owner#2026, ravi / Ravi#2026, priya / Priya#2026
-const { createPool, migrate } = require('../src/db');
-const { push } = require('../src/sync');
+// Usage: node scripts/seed-demo.js [--force]     Logins: owner / Owner#2026, ravi / Ravi#2026, priya / Priya#2026
+const { runScript } = require('./lib/runScript');
+const { Roles } = require('../src/domain/Roles');
 
 const now = new Date(), iso = now.toISOString();
 const day = n => { const d = new Date(now); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
@@ -25,19 +25,17 @@ const data = {
   officeGps: { lat: 18.5204, lng: 73.8567, radius: 200, _up: iso },
 };
 
-(async () => {
-  const pool = createPool();
-  await migrate(pool);
-  const n = Number((await pool.query('select count(*) from records')).rows[0].count);
-  if (n > 0 && process.argv[2] !== '--force') { console.error(`database already has ${n} records; not seeding (use --force to add demo data anyway)`); process.exit(1); }
+runScript(async (app, args) => {
+  await app.prepare();
+  const n = await app.repositories.records.countAll();
+  if (n > 0 && args[0] !== '--force') { console.error(`database already has ${n} records; not seeding (use --force to add demo data anyway)`); process.exitCode = 1; return; }
   const changes = [];
   for (const [module, v] of Object.entries(data)) {
     if (Array.isArray(v)) v.forEach(r => changes.push({ module, id: String(r.id), data: r }));
     else changes.push({ module, id: '_', data: v });
   }
-  const { results } = await push(pool, { system: true, role: 'Admin' }, changes);
-  const bad = results.filter(r => r.status !== 'applied');
-  console.log(`demo data: ${results.length - bad.length} records added${bad.length ? `, ${bad.length} refused: ${bad.map(b => b.reason).join('; ')}` : ''}`);
+  const { results } = await app.sync.push(Roles.SYSTEM, changes);
+  const refused = results.filter(r => r.status !== 'applied');
+  console.log(`demo data: ${results.length - refused.length} records added${refused.length ? `, ${refused.length} refused: ${refused.map(r => r.reason).join('; ')}` : ''}`);
   console.log('logins: owner / Owner#2026 (Admin), ravi / Ravi#2026 (Technician), priya / Priya#2026 (Accountant)');
-  await pool.end();
-})().catch(e => { console.error(e.message); process.exit(1); });
+});
